@@ -1,4 +1,5 @@
 use std::io::stdin;
+use owo_colors::OwoColorize;
 
 use atty::Stream;
 use clap::Parser;
@@ -25,8 +26,11 @@ fn factor(mut input: u128) -> Vec<u128> {
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
+    /// Run interactively (meant for TTY)
+    #[arg(short, long)]
+    interactive: bool,
     /// List of numbers to factor.
-    numbers: Option<Vec<u128>>
+    numbers: Option<Vec<u128>>,
 }
 
 fn main() {
@@ -45,32 +49,51 @@ fn main() {
                     .join(" ")
             );
         }
-    } else {
-        if atty::is(Stream::Stdin) {
-            eprintln!("STDIN expected. Make sure to pipe something in, or run with arguments. Run factorr --help for more information.");
-        } else {
-            for line in stdin().lines() {
-                let line = line.unwrap();
+        return;
+    }
+    
 
-                let input = line.parse::<u128>();
+    if atty::is(Stream::Stdin) && !cli.interactive {
+        eprintln!("{}", "non-tty stream expected\n".red().bold());
+        eprintln!("Run with arguments [ {} ], or run interactively [ {} ].", "factorr 127 581".italic().green(), "factorr --interactive".italic().green());
+        eprintln!("Run {} for more information.", "factorr --help".bold().yellow());
+        return;
+    }
 
-                match input {
-                    Ok(input) => {
-                        let factors = factor(input);
+    if cli.interactive {
+        println!("Welcome to {}! Enter a number to factor, or enter: {}, {}, or type '{}' to quit.", "factorr".yellow(), "CTRL + D".green(), "CTRL + C".green(), "exit".red());
+    }
 
-                        println!(
-                            "{}",
-                            factors
-                                .iter()
-                                .map(|x| x.to_string())
-                                .collect::<Vec<String>>()
-                                .join(" ")
-                        );
-                    },
-                    Err(_) => {
-                        eprintln!("Expected a number, got {} instead.", line);
-                        return;
-                    }
+    // Read from stdin
+    for line in stdin().lines() {
+        let line = line.unwrap();
+
+        if cli.interactive && line == "exit" {
+            break;
+        }
+
+        let input = line.parse::<u128>();
+
+        match input {
+            Ok(input) => {
+                let factors = factor(input);
+
+                println!(
+                    "{} {}",
+                    if cli.interactive { ">" } else { "" },
+                    factors
+                        .iter()
+                        .map(|x| x.to_string())
+                        .collect::<Vec<String>>()
+                        .join(" ")
+                );
+            },
+            Err(_) => {
+                if cli.interactive {
+                    println!("{} {} {}", "Invalid input -- expected a number, got".red(), line.red().bold(), "instead.".red());
+                } else {
+                    eprintln!("Expected a number, got {} instead.", line);
+                    return;
                 }
             }
         }

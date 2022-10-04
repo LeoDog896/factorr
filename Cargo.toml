@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 atty = "0.2.14"
 clap = { version = "4.0.9", features = ["derive"] }
+owo-colors = "3.5.0"
