@@ -1,5 +1,7 @@
 use std::io::stdin;
 use owo_colors::OwoColorize;
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
 
 use atty::Stream;
 use clap::Parser;
@@ -62,15 +64,58 @@ fn main() {
 
     if cli.interactive {
         println!("Welcome to {}! Enter a number to factor, or enter: {}, {}, or type '{}' to quit.", "factorr".yellow(), "CTRL + D".green(), "CTRL + C".green(), "exit".red());
+
+        let mut rl = Editor::<()>::new().expect("Could not create interactive session. Make sure this is a TTY stream!");
+        loop {
+            let readline = rl.readline(format!("{} ", ">>".black()).as_str());
+            match readline {
+                Ok(line) => {
+
+                    if line.to_lowercase() == "exit" {
+                        break;
+                    }
+
+                    rl.add_history_entry(line.as_str());
+                    let input = line.parse::<u128>();
+
+                    match input {
+                        Ok(input) => {
+                            let factors = factor(input);
+
+                            println!(
+                                "{}",
+                                factors
+                                    .iter()
+                                    .map(|x| x.to_string())
+                                    .collect::<Vec<String>>()
+                                    .join(" ")
+                            );
+                        },
+                        Err(_) => {
+                            eprintln!("{} Expected a number, got '{}' instead.", "error:".red(), line);
+                            continue;
+                        }
+                    }
+                },
+                Err(ReadlineError::Interrupted) => {
+                    break
+                },
+                Err(ReadlineError::Eof) => {
+                    break
+                },
+                Err(err) => {
+                    println!("Error: {:?}", err);
+                    break
+                }
+            }
+        }
+
+        return;
     }
 
     // Read from stdin
     for line in stdin().lines() {
         let line = line.unwrap();
-
-        if cli.interactive && line == "exit" {
-            break;
-        }
 
         let input = line.parse::<u128>();
 
@@ -79,8 +124,7 @@ fn main() {
                 let factors = factor(input);
 
                 println!(
-                    "{} {}",
-                    if cli.interactive { ">" } else { "" },
+                    "{}",
                     factors
                         .iter()
                         .map(|x| x.to_string())
@@ -89,12 +133,8 @@ fn main() {
                 );
             },
             Err(_) => {
-                if cli.interactive {
-                    println!("{} {} {}", "Invalid input -- expected a number, got".red(), line.red().bold(), "instead.".red());
-                } else {
-                    eprintln!("Expected a number, got {} instead.", line);
-                    return;
-                }
+                eprintln!("Expected a number, got {} instead.", line);
+                return;
             }
         }
     }
