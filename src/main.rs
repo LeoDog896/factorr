@@ -5,24 +5,7 @@ use rustyline::Editor;
 
 use atty::Stream;
 use clap::Parser;
-
-fn factor(mut input: u128) -> Vec<u128> {
-    let mut factors = Vec::new();
-
-    let mut candidates = 2..;
-
-    while input > 1 {
-        let x = candidates.next().unwrap();
-
-        while input % x == 0 {
-            input /= x;
-
-            factors.push(x);
-        }
-    }
-
-    factors
-}
+use primefactor::PrimeFactors;
 
 /// Gets the prime factors for any integer. It will use stdin if none are specified.
 #[derive(Parser, Debug)]
@@ -33,6 +16,15 @@ struct Cli {
     interactive: bool,
     /// List of numbers to factor.
     numbers: Option<Vec<u128>>,
+}
+
+fn factor(num: u128) -> Vec<u128> {
+    let factors = PrimeFactors::from(num);
+    if factors.is_prime() {
+        vec![num]
+    } else {
+        factors.to_vec()
+    }
 }
 
 fn main() {
