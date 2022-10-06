@@ -76,7 +76,7 @@ fn main() {
                     }
 
                     rl.add_history_entry(line.as_str());
-                    let input = line.parse::<u128>();
+                    let input = line.trim().parse::<u128>();
 
                     match input {
                         Ok(input) => {
